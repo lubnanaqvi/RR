@@ -1,0 +1,97 @@
+<html>
+<head>
+    <style>
+        body{
+            margin:3%;
+        }
+        h1{
+            color:blue;
+            text-align: center;
+        }
+        textarea{
+            height: 70%;
+            width: 70%;
+            display: block;
+        }
+        button{
+            display: block;
+            margin:2%;
+        }
+        p{
+            display: inline-block;
+        }
+        #yourmsgs{
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<h1>Recipe Reader</h1>
+<p id="mymsgs">Please select all and copy + paste your recipe in the text box below.</p>
+<div id="yourmsgs"><label>You said:</label><p id="speechfb"></p></div>
+<button id="btn" onclick="readrecipe()">Start Cooking</button>
+<textarea id="recipetextbox"></textarea>
+</body>
+<script src='https://code.responsivevoice.org/responsivevoice.js'></script>
+
+<script>
+    function readrecipe() {
+        var recipe = document.getElementById("recipetextbox").value;
+        if (recipe.length == 0)
+            document.getElementById('mymsgs').innerHTML = 'Please enter a recipe in the text box below.';
+        else
+            startcooking(recipe);
+    }
+    function startcooking(recipe){
+        document.getElementById('mymsgs').innerHTML= 'Please say Next or Back to switch between steps. Say \"Stop listening\" to stop the reader.'
+        var stepified=recipe.split('\n');
+        var mystep=0;
+        responsiveVoice.speak(stepified[mystep]);
+
+        //speech recognition
+        var endlistener=false;
+        document.getElementById('yourmsgs').style.display='block';
+        var recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 5;
+        recognition.start();
+
+        recognition.onresult = function(event) {
+            //console.log('You said: ', event.results[0][0].transcript);
+            var usercommand=event.results[0][0].transcript;
+            document.getElementById('speechfb').innerHTML=usercommand;
+            if(usercommand.indexOf('stop listening')!==-1)
+                endlistener=true;
+            if(usercommand==='next')
+            {
+                mystep++;
+                if(mystep==stepified.length){
+                    endlistener=true;
+                    responsiveVoice.speak("Reached the end of the recipe. Enjoy your food.")
+                }
+                else
+                    responsiveVoice.speak(stepified[mystep]);
+            }
+            if(usercommand==='back')
+            {
+                mystep--;
+                if(mystep<0)
+                {
+                    responsiveVoice.speak('Already at the start of the recipe');
+                    mystep=0;
+                }
+                responsiveVoice.speak(stepified[mystep]);
+            }
+        };
+
+        recognition.onend=function(event){
+            if(!endlistener)
+                recognition.start();
+            else
+                responsiveVoice.speak('ok bye-bye');
+
+        };
+    }
+</script>
+</html>
